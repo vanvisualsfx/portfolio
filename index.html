@@ -126,6 +126,10 @@ nav a:hover::after{width:100%;}
 .channels{display:flex;flex-direction:column;border:1px solid var(--line);}
 .channel{padding:26px 26px;border-bottom:1px solid var(--line);display:grid;grid-template-columns:auto 1fr;gap:18px;align-items:start;}
 .channel:last-child{border-bottom:none;}
+a.channel{transition:background .25s var(--ease);}
+a.channel:hover{background:var(--panel-2);}
+a.channel h3::after{content:'\2197';font-family:var(--mono);font-size:14px;color:var(--gold);margin-left:10px;vertical-align:middle;}
+a.channel:hover h3{color:var(--gold);}
 .channel .badge{width:46px;height:46px;border-radius:50%;display:grid;place-items:center;font-family:var(--display);font-size:20px;background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold-dim);}
 .channel h3{font-size:26px;}
 .channel p{color:var(--ink-dim);font-size:14.5px;}
@@ -345,8 +349,8 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;
       <p>I'm <strong>Van Santos</strong>, a Filipino filmmaker in Salamanca, Spain. I shoot on a <strong>Sony A7 V</strong>, finish in <strong>DaVinci Resolve Studio</strong>, and work in English and Filipino, Taglish included. Short-form comes back in 1–2 days, with two revision rounds included.</p>
     </div>
     <div class="channels reveal">
-      <div class="channel"><div class="badge">Q&amp;V</div><div><h3>Q&amp;V Portion Podcast</h3><p>My own show. I'm one of the interviewers, and I shoot, edit, and publish every episode and clip. One episode reached 85K views in 5 days.</p><em>YouTube · Reels · TikTok</em></div></div>
-      <div class="channel"><div class="badge">VT</div><div><h3>VamosTodos Language Training Center</h3><p>My own Spanish school. I shoot and edit its promo and ad videos: Reels and clips for its classes, conversation practice, and DELE prep.</p><em>Facebook · Instagram · Reels</em></div></div>
+      <a class="channel" href="https://www.youtube.com/@qandvportion" target="_blank" rel="noopener" aria-label="Open the Q&amp;V Portion Podcast on YouTube"><div class="badge">Q&amp;V</div><div><h3>Q&amp;V Portion Podcast</h3><p>My own show. I'm one of the interviewers, and I shoot, edit, and publish every episode and clip. One episode reached 85K views in 5 days.</p><em>YouTube · Reels · TikTok</em></div></a>
+      <a class="channel" href="https://www.facebook.com/vamostodos2022/" target="_blank" rel="noopener" aria-label="Open the VamosTodos Facebook page"><div class="badge">VT</div><div><h3>VamosTodos Language Training Center</h3><p>My own Spanish school. I shoot and edit its promo and ad videos: Reels and clips for its classes, conversation practice, and DELE prep.</p><em>Facebook · Instagram · Reels</em></div></a>
     </div>
   </div>
 </section>

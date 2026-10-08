@@ -486,7 +486,8 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;
       </form>
       <div class="direct">
         <h3>Direct lines.</h3>
-        <a href="mailto:jovanjestercatibodsantos@gmail.com"><span class="k">Email</span>jovanjestercatibodsantos@gmail.com</a>
+        <a href="mailto:vanvisualsfx@gmail.com"><span class="k">Email</span>vanvisualsfx@gmail.com</a>
+        <a href="https://www.instagram.com/kaizenican/" target="_blank" rel="noopener"><span class="k">Instagram</span>@kaizenican</a>
         <div class="line"><span class="k">Based in</span>Salamanca, Spain (CET)</div>
       </div>
     </div>
@@ -562,7 +563,7 @@ document.getElementById('contactForm').addEventListener('submit',async e=>{
   const name=f.name.value.trim(),email=f.email.value.trim(),msg=f.message.value.trim(),type=f.type?f.type.value:'';
   if(!name||!email||!msg){note.textContent='Fill in your name, email, and message to send.';return;}
   if(!/^\S+@\S+\.\S+$/.test(email)){note.textContent='Enter a valid email address, like name@example.com.';return;}
-  const TO='jovanjestercatibodsantos@gmail.com';
+  const TO='vanvisualsfx@gmail.com';
   const subject=(type?'Project: '+type+' ':'Portfolio inquiry ')+'from '+name;
   btn.disabled=true;btn.textContent='Sending…';note.textContent='';
   try{

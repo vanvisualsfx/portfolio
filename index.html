@@ -249,13 +249,14 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;
   .reveal{opacity:1;transform:none;}
 }
 
-/* video player */
-.player{position:fixed;inset:0;z-index:10000;background:rgba(0,0,0,.88);display:none;align-items:center;justify-content:center;padding:calc(20px + env(safe-area-inset-top,0px)) 20px calc(20px + env(safe-area-inset-bottom,0px));}
-.player.open{display:flex;}
-.player-box{position:relative;width:min(420px,100%);height:min(760px,100%);background:#000;border-radius:4px;overflow:hidden;}
-.player-box.wide{width:min(1100px,100%);height:auto;aspect-ratio:16/9;}
-.player-box iframe,.player-box video{width:100%;height:100%;border:0;display:block;background:#000;}
-.player-close{position:absolute;top:calc(14px + env(safe-area-inset-top,0px));right:18px;width:42px;height:42px;border-radius:50%;border:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.5);color:#fff;font-size:18px;cursor:pointer;}
+/* video plays inside its own card, in place of the thumbnail */
+.thumb.playing{background:#000 !important;max-height:84vh;}
+.thumb.playing>.ratio,.thumb.playing>.play,.thumb.playing>.dur{display:none;}
+.thumb video,.thumb iframe{position:absolute;inset:0;width:100%;height:100%;border:0;background:#000;object-fit:contain;display:block;}
+.thumb-close{position:absolute;top:8px;right:8px;z-index:2;width:32px;height:32px;border-radius:50%;border:1px solid rgba(255,255,255,.35);background:rgba(0,0,0,.6);color:#fff;font-size:14px;line-height:1;cursor:pointer;}
+/* while one card is playing, its neighbours keep their own height instead of stretching to match */
+.port-grid.has-playing{align-items:start;}
+.port-card.is-playing,.port-card.is-playing:hover{transform:none;border-color:var(--gold);cursor:default;}
 </style>
 </head>
 <body>
@@ -489,10 +490,6 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;
 
 <footer><div class="wrap"><span>© <span id="yr"></span> Van Santos</span><span>Shot and cut in Salamanca, Spain</span></div></footer>
 
-<div class="player" id="player" role="dialog" aria-modal="true" aria-label="Video player">
-  <button class="player-close" id="playerClose" aria-label="Close video">✕</button>
-  <div class="player-box" id="playerBox"></div>
-</div>
 <script>
 const root=document.documentElement;
 const reduce=matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -542,6 +539,7 @@ document.querySelectorAll('.filter-btn').forEach(btn=>btn.addEventListener('clic
   document.querySelectorAll('.filter-btn').forEach(b=>b.classList.remove('active'));btn.classList.add('active');
   const f=btn.dataset.f;
   document.querySelectorAll('#work .port-card').forEach(c=>{c.hidden=!(f==='all'||c.dataset.cat.split(' ').includes(f));});
+  stopHidden();
   document.querySelectorAll('#work .port-block').forEach(b=>{b.hidden=!b.querySelector('.port-card:not([hidden])');});
 }));
 document.querySelectorAll('.port-card[href="#"]').forEach(c=>c.addEventListener('click',e=>e.preventDefault()));
@@ -573,37 +571,58 @@ document.getElementById('contactForm').addEventListener('submit',async e=>{
 });
 document.getElementById('yr').textContent=new Date().getFullYear();
 
-// in-page video player: data-video (MP4 file) plays natively, data-embed (Instagram/YouTube) plays in a frame
-const player=document.getElementById('player'),pbox=document.getElementById('playerBox');
-let lastFocus=null;
-function openPlayer(card){
-  lastFocus=card;pbox.innerHTML='';pbox.classList.toggle('wide',card.dataset.wide==='1');
-  if(card.dataset.video){
-    const v=document.createElement('video');v.src=card.dataset.video;v.controls=true;v.autoplay=true;v.playsInline=true;v.preload='auto';
-    v.addEventListener('error',()=>{card.dataset.ext='1';closePlayer();window.open(card.href,'_blank','noopener');});
-    v.addEventListener('loadedmetadata',()=>{pbox.classList.toggle('wide',v.videoWidth>v.videoHeight);});
-    pbox.appendChild(v);
-  }else{const f=document.createElement('iframe');f.src=card.dataset.embed;f.allow='autoplay; encrypted-media; picture-in-picture; fullscreen';f.allowFullscreen=true;f.title='Video';f.style.background='#000';pbox.appendChild(f);}
-  player.classList.add('open');document.body.style.overflow='hidden';document.getElementById('playerClose').focus();
+// in-place video player: the video plays inside its own card, where the thumbnail was.
+// data-video (MP4 file) plays natively, data-embed (YouTube) plays in a frame.
+let active=null;
+function stopActive(){
+  if(!active)return;
+  const {card,thumb,media,close,href}=active;active=null;
+  try{if(media.pause)media.pause();}catch(err){}
+  media.remove();close.remove();
+  thumb.classList.remove('playing');thumb.style.aspectRatio='';
+  card.classList.remove('is-playing');card.setAttribute('href',href);
+  const g=card.closest('.port-grid');if(g)g.classList.remove('has-playing');
 }
-function closePlayer(){player.classList.remove('open');pbox.innerHTML='';document.body.style.overflow='';if(lastFocus)lastFocus.focus();}
+function stopHidden(){if(active&&active.card.hidden)stopActive();}
+function playInCard(card){
+  stopActive();
+  const thumb=card.querySelector('.thumb'),href=card.getAttribute('href');
+  let media;
+  if(card.dataset.video){
+    media=document.createElement('video');media.src=card.dataset.video;media.controls=true;media.autoplay=true;media.playsInline=true;media.preload='auto';
+    // the frame takes the video's own shape, so vertical videos are not squeezed into a wide box
+    media.addEventListener('loadedmetadata',()=>{if(media.videoWidth&&media.videoHeight){thumb.style.aspectRatio=media.videoWidth+' / '+media.videoHeight;thumb.scrollIntoView({block:'nearest'});}});
+    media.addEventListener('error',()=>{card.dataset.ext='1';stopActive();window.open(href,'_blank','noopener');});
+  }else{
+    media=document.createElement('iframe');media.src=card.dataset.embed;media.allow='autoplay; encrypted-media; picture-in-picture; fullscreen';media.allowFullscreen=true;media.title='Video';
+  }
+  const close=document.createElement('button');close.type='button';close.className='thumb-close';close.setAttribute('aria-label','Close video');close.textContent='\u2715';
+  close.addEventListener('click',e=>{e.preventDefault();e.stopPropagation();stopActive();});
+  // while it plays the card stops being a link, so clicks on the video controls stay on the page
+  card.removeAttribute('href');card.classList.add('is-playing');
+  const g=card.closest('.port-grid');if(g)g.classList.add('has-playing');
+  thumb.classList.add('playing');thumb.appendChild(media);thumb.appendChild(close);
+  active={card,thumb,media,close,href};
+}
 // YouTube and other embeds can't load when this page is shown inside another page (like a preview pane),
 // so there the card behaves as a normal link and opens the video in a new tab
 let framed=false;try{framed=window.self!==window.top;}catch(err){framed=true;}
 document.addEventListener('securitypolicyviolation',e=>{
   if(!/frame-src|child-src/.test(e.effectiveDirective||e.violatedDirective||''))return;
   document.querySelectorAll('.port-card[data-embed]').forEach(c=>{c.dataset.ext='1';});
-  if(player.classList.contains('open')&&pbox.querySelector('iframe')){const c=lastFocus;closePlayer();if(c&&c.href)window.open(c.href,'_blank','noopener');}
+  if(active&&active.media.tagName==='IFRAME'){const href=active.href;stopActive();window.open(href,'_blank','noopener');}
 });
 document.querySelectorAll('.port-card[data-embed],.port-card[data-video]').forEach(c=>{
   if(c.dataset.embed&&framed)c.dataset.ext='1';
   // check ahead of time whether the video can load here; if not, the card simply opens the video in a new tab
-  if(c.dataset.video){const probe=document.createElement('video');probe.preload='metadata';probe.muted=true;probe.addEventListener('error',()=>{c.dataset.ext='1';});probe.addEventListener('loadedmetadata',()=>{const w=probe.videoWidth>probe.videoHeight;c.dataset.wide=w?'1':'';const r=c.querySelector('.ratio');if(r)r.textContent=w?'16:9':'9:16';});probe.src=c.dataset.video;}
-  c.addEventListener('click',e=>{if(c.dataset.ext==='1')return;e.preventDefault();openPlayer(c);});
+  if(c.dataset.video){const probe=document.createElement('video');probe.preload='metadata';probe.muted=true;probe.addEventListener('error',()=>{c.dataset.ext='1';});probe.addEventListener('loadedmetadata',()=>{const w=probe.videoWidth>probe.videoHeight;const r=c.querySelector('.ratio');if(r)r.textContent=w?'16:9':'9:16';});probe.src=c.dataset.video;}
+  c.addEventListener('click',e=>{
+    if(active&&active.card===c)return;          // already playing here: leave the video controls alone
+    if(c.dataset.ext==='1')return;              // file not available: act as a normal link
+    e.preventDefault();playInCard(c);
+  });
 });
-document.getElementById('playerClose').addEventListener('click',closePlayer);
-player.addEventListener('click',e=>{if(e.target===player)closePlayer();});
-addEventListener('keydown',e=>{if(e.key==='Escape'&&player.classList.contains('open'))closePlayer();});
+addEventListener('keydown',e=>{if(e.key==='Escape'&&active)stopActive();});
 </script>
 </body>
 </html>

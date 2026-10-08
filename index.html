@@ -604,6 +604,8 @@ function playInCard(card){
     // the frame takes the video's own shape, so vertical videos are not squeezed into a wide box
     media.addEventListener('loadedmetadata',()=>{if(media.videoWidth&&media.videoHeight){thumb.style.aspectRatio=media.videoWidth+' / '+media.videoHeight;thumb.scrollIntoView({block:'nearest'});}});
     media.addEventListener('error',()=>{card.dataset.ext='1';stopActive();window.open(href,'_blank','noopener');});
+    media.addEventListener('webkitbeginfullscreen',()=>{fsY=window.scrollY;cancelFsRestore();});
+    media.addEventListener('webkitendfullscreen',restoreAfterFs);
   }else{
     media=document.createElement('iframe');media.src=card.dataset.embed;media.allow='autoplay; encrypted-media; picture-in-picture; fullscreen';media.allowFullscreen=true;media.title='Video';
   }
@@ -634,6 +636,36 @@ document.querySelectorAll('.port-card[data-embed],.port-card[data-video]').forEa
   });
 });
 addEventListener('keydown',e=>{if(e.key==='Escape'&&active)stopActive();});
+
+// Closing a fullscreen video on a phone (back button or the player's own button) can throw the page
+// back to the top. These keep the visitor at the video they were watching.
+let fsY=0,lastTapY=0,fsTimers=[],fsGuard=false,fsExitAt=0;
+function isFs(){return !!(document.fullscreenElement||document.webkitFullscreenElement);}
+function cancelFsRestore(){fsTimers.forEach(clearTimeout);fsTimers=[];}
+function restoreAfterFs(){
+  cancelFsRestore();
+  const fix=()=>{
+    if(active){const r=active.thumb.getBoundingClientRect();if(r.bottom<40||r.top>innerHeight-40)active.thumb.scrollIntoView({block:'center',behavior:'instant'});return;}
+    if(Math.abs(window.scrollY-fsY)>8)window.scrollTo({top:fsY,left:0,behavior:'instant'});
+  };
+  [0,120,350,700,1200].forEach(ms=>fsTimers.push(setTimeout(fix,ms)));
+}
+addEventListener('pointerdown',()=>{if(!isFs())lastTapY=window.scrollY;},true);
+['fullscreenchange','webkitfullscreenchange'].forEach(ev=>document.addEventListener(ev,()=>{
+  if(isFs()){
+    fsY=lastTapY||window.scrollY;cancelFsRestore();
+    // a spare history step, so a phone's back button closes the video instead of moving the page
+    if(!fsGuard){try{history.pushState({fsGuard:1},'');fsGuard=true;}catch(err){}}
+  }else{
+    fsExitAt=Date.now();restoreAfterFs();
+    if(fsGuard){fsGuard=false;try{history.back();}catch(err){}}
+  }
+}));
+addEventListener('popstate',()=>{
+  if(isFs()){fsGuard=false;const x=document.exitFullscreen||document.webkitExitFullscreen;if(x)x.call(document);}
+  else if(Date.now()-fsExitAt<1500)restoreAfterFs();
+});
+['touchstart','wheel'].forEach(ev=>addEventListener(ev,()=>{if(!isFs()&&Date.now()-fsExitAt>250)cancelFsRestore();},{passive:true}));
 </script>
 </body>
 </html>

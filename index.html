@@ -219,6 +219,9 @@ form{display:flex;flex-direction:column;gap:16px;}
 label{font-family:var(--mono);font-size:12px;color:var(--ink-dim);display:flex;flex-direction:column;gap:8px;}
 input,textarea,select{font-family:var(--body);font-size:15px;background:var(--panel);border:1px solid var(--line);color:var(--ink);padding:14px 16px;border-radius:2px;}
 input:focus,textarea:focus,select:focus{outline:none;border-color:var(--gold);}
+select:invalid{color:var(--ink-faint);}
+select option{color:var(--ink);background:var(--panel);}
+select option[disabled]{color:var(--ink-faint);}
 textarea{min-height:140px;resize:vertical;}
 .form-note{font-size:13px;color:var(--ink-faint);min-height:20px;}
 .direct h3{font-size:30px;margin-bottom:18px;}
@@ -491,7 +494,7 @@ footer .wrap{display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;
       <form id="contactForm" novalidate>
         <label>Name<input type="text" name="name" required autocomplete="name"></label>
         <label>Email<input type="email" name="email" required autocomplete="email"></label>
-        <label>Project type<select name="type"><option>Travel or cinematic film</option><option>Podcast editing</option><option>Short-form / Reels</option><option>Documentary or video essay</option><option>Something else</option></select></label>
+        <label>Project type<select name="type" required><option value="" disabled selected>Choose a project type</option><option>Travel or cinematic film</option><option>Podcast editing</option><option>Short-form / Reels</option><option>Promo or brand video</option><option>Documentary or video essay</option><option>Something else</option></select></label>
         <label>Project details<textarea name="message" required></textarea></label>
         <div><button type="submit" class="btn btn-primary">Get my quote</button></div>
         <div class="form-note" id="formNote" role="status"></div>
@@ -616,6 +619,7 @@ document.getElementById('contactForm').addEventListener('submit',async e=>{
   e.preventDefault();const f=e.target,note=document.getElementById('formNote'),btn=f.querySelector('button[type=submit]');
   const name=f.name.value.trim(),email=f.email.value.trim(),msg=f.message.value.trim(),type=f.type?f.type.value:'';
   if(!name||!email||!msg){note.textContent='Fill in your name, email, and message to send.';return;}
+  if(!type){note.textContent='Choose a project type so I can quote the right thing.';f.type.focus();return;}
   if(!/^\S+@\S+\.\S+$/.test(email)){note.textContent='Enter a valid email address, like name@example.com.';return;}
   const TO='vanvisualsfx@gmail.com';
   const subject=(type?'Project: '+type+' ':'Portfolio inquiry ')+'from '+name;
